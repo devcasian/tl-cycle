@@ -367,8 +367,11 @@
   </div>
 </div>
 
+<script src="config.js"></script>
 <script>
-  let testNightElapsed = null; // null = real time; number = forced night elapsed seconds
+  let testNightElapsed = null;
+
+  if (CONFIG.testMode) enableTest();
 
   function enableTest() {
     testNightElapsed = 30;
