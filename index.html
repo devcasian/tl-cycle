@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T&L — Цикл дня и ночи</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #080c14;
+      color: #c8d0e0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .wrap { width: 100%; max-width: 440px; }
+
+    .brand {
+      text-align: center;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      color: #2a3550;
+      text-transform: uppercase;
+      margin-bottom: 3.5rem;
+    }
+
+    /* ── Test panel ── */
+    .test-panel {
+      border: 1px solid #1a2a1a;
+      background: #080e08;
+      border-radius: 3px;
+      padding: 0.6rem 0.875rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .test-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #2a4a2a;
+      white-space: nowrap;
+    }
+
+    .test-slider {
+      flex: 1;
+      accent-color: #4a8a4a;
+      cursor: pointer;
+    }
+
+    .test-time {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.72rem;
+      color: #4a8a4a;
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    .test-btn {
+      background: none;
+      border: 1px solid #1a3a1a;
+      color: #2a5a2a;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.5rem;
+      border-radius: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .test-btn:hover { border-color: #2a5a2a; color: #4a8a4a; }
+
+    /* ── Phase ── */
+    .phase-block { text-align: center; margin-bottom: 2.5rem; }
+
+    .phase-icon { width: 72px; height: 72px; margin: 0 auto 1.5rem; }
+
+    .phase-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .phase-label.day   { color: #f5c542; }
+    .phase-label.night { color: #7eb8f7; }
+
+    .phase-sub {
+      font-size: 0.68rem;
+      color: #2a3550;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .countdown {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+      font-size: 3.75rem;
+      font-weight: 200;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .countdown.day   { color: #f5c542; }
+    .countdown.night { color: #7eb8f7; }
+
+    /* ── Progress ── */
+    .progress {
+      height: 1px;
+      background: #111926;
+      border-radius: 1px;
+      margin: 2.5rem 0 2rem;
+      overflow: hidden;
+    }
+    .progress-fill { height: 100%; transition: width 1s linear; }
+    .progress-fill.day   { background: #f5c542; }
+    .progress-fill.night { background: #7eb8f7; }
+
+    /* ── Warning banner ── */
+    .warn-banner {
+      border: 1px solid #3a2008;
+      background: #0c0904;
+      border-radius: 3px;
+      padding: 0.7rem 1rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    .warn-banner.visible { display: block; }
+
+    .warn-title {
+      font-size: 0.72rem;
+      color: #e8943a;
+      margin-bottom: 0.2rem;
+    }
+
+    .warn-sub {
+      font-size: 0.7rem;
+      color: #4a3018;
+    }
+
+    /* ── Chest timeline ── */
+    .chest-section { margin-bottom: 2.5rem; display: none; }
+    .chest-section.visible { display: block; }
+
+    .section-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #2a3550;
+      margin-bottom: 0.75rem;
+    }
+
+    .chest-list { list-style: none; }
+
+    .chest-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid #0e1420;
+      transition: opacity 0.4s;
+    }
+    .chest-item:last-child { border-bottom: none; }
+    .chest-item.past { opacity: 0.25; }
+
+    .chest-time {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.78rem;
+      min-width: 4.5rem;
+      padding-top: 2px;
+      color: #3a4e6a;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .chest-time-rem {
+      font-size: 0.68rem;
+      color: #5a7a9a;
+    }
+
+    .chest-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .chest-dot.small  { background: #2a4060; }
+    .chest-dot.medium { background: #7eb8f7; }
+    .chest-dot.large  { background: #f5a84d; }
+
+    .chest-info { flex: 1; min-width: 0; }
+
+    .chest-name {
+      font-size: 0.85rem;
+      color: #c8d0e0;
+      margin-bottom: 0.1rem;
+    }
+    .chest-item.past .chest-name { color: #2a3a50; }
+
+    .chest-loc { font-size: 0.7rem; color: #2a3550; }
+
+    .chest-eta {
+      font-size: 0.72rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      padding-top: 2px;
+      white-space: nowrap;
+      color: #3a5070;
+    }
+    .chest-eta.next { color: #f5a84d; }
+
+    /* ── Schedule ── */
+    .schedule-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #2a3550;
+      margin-bottom: 0.75rem;
+    }
+
+    .schedule { list-style: none; }
+    .schedule li { border-bottom: 1px solid #0e1420; }
+    .schedule li:last-child { border-bottom: none; }
+
+    .s-row {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0.55rem 0;
+    }
+
+    .s-time {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.875rem;
+      min-width: 2.75rem;
+      color: #5a6e8a;
+    }
+
+    .s-pip { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .s-pip.day   { background: #f5c542; }
+    .s-pip.night { background: #7eb8f7; }
+
+    .s-name { flex: 1; font-size: 0.875rem; }
+    .s-dur  { font-size: 0.75rem; color: #2a3550; }
+
+    .s-date {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1e2e46;
+      text-align: center;
+      padding: 0.6rem 0;
+    }
+
+    /* ── Rewards table ── */
+    .rewards-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #0e1420;
+    }
+
+    .rewards-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .rewards-table th {
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #2a3550;
+      font-weight: 400;
+      text-align: left;
+      padding: 0 0 0.6rem;
+      border-bottom: 1px solid #0e1420;
+    }
+    .rewards-table th:not(:first-child) { text-align: right; }
+
+    .rewards-table td {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #0e1420;
+      color: #8898b0;
+      vertical-align: middle;
+    }
+    .rewards-table tr:last-child td { border-bottom: none; }
+    .rewards-table td:not(:first-child) {
+      text-align: right;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .chest-badge { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .badge-dot.small  { background: #2a4060; }
+    .badge-dot.medium { background: #7eb8f7; }
+    .badge-dot.large  { background: #f5a84d; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <p class="brand">Throne &amp; Liberty · RU · Цикл дня и ночи</p>
+
+  <div class="phase-block">
+    <div class="phase-icon" id="icon"></div>
+    <div class="phase-label" id="phaseLabel"></div>
+    <div class="phase-sub"  id="phaseSub"></div>
+    <div class="countdown"  id="countdown"></div>
+  </div>
+
+  <div class="progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Temporary test panel -->
+  <div class="test-panel" id="testPanel" style="display:none">
+    <span class="test-label">Тест</span>
+    <input class="test-slider" id="testSlider" type="range" min="0" max="1799" value="30">
+    <span class="test-time" id="testTime">00:30</span>
+    <button class="test-btn" onclick="disableTest()">✕</button>
+  </div>
+
+  <div class="warn-banner" id="warnBanner">
+    <div class="warn-title" id="warnTitle"></div>
+    <div class="warn-sub">Вейпоинт острова недоступен ночью — телепортируйся заранее</div>
+  </div>
+
+  <div class="chest-section" id="chestSection">
+    <p class="section-title">Сундуки острова Саурдомы</p>
+    <ul class="chest-list" id="chestList"></ul>
+  </div>
+
+  <p class="schedule-title">Расписание МСК</p>
+  <ul class="schedule" id="schedule"></ul>
+
+  <div class="rewards-section">
+    <p class="section-title" style="margin-bottom:0.75rem">Награды с сундуков</p>
+    <table class="rewards-table">
+      <thead>
+        <tr>
+          <th>Сундук</th>
+          <th>Abyss</th>
+          <th>Токены</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="chest-badge"><span class="badge-dot small"></span>Матросский</span></td>
+          <td>3</td><td>300</td>
+        </tr>
+        <tr>
+          <td><span class="chest-badge"><span class="badge-dot medium"></span>Капитанский</span></td>
+          <td>6</td><td>600</td>
+        </tr>
+        <tr>
+          <td><span class="chest-badge"><span class="badge-dot large"></span>Пиратского короля</span></td>
+          <td>10</td><td>900</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let testNightElapsed = null; // null = real time; number = forced night elapsed seconds
+
+  function enableTest() {
+    testNightElapsed = 30;
+    document.getElementById('testPanel').style.display = 'flex';
+    document.getElementById('testSlider').value = 30;
+    document.getElementById('testTime').textContent = fmtMs(30);
+    render();
+  }
+
+  function disableTest() {
+    testNightElapsed = null;
+    document.getElementById('testPanel').style.display = 'none';
+    render();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('testSlider').addEventListener('input', e => {
+      testNightElapsed = Number(e.target.value);
+      document.getElementById('testTime').textContent = fmtMs(testNightElapsed);
+      render();
+    });
+  });
+
+  const ANCHOR = new Date('2026-06-07T08:30:00Z'); // 11:30 МСК
+  const NIGHT  = 30 * 60;
+  const DAY    = 120 * 60;
+  const CYCLE  = NIGHT + DAY;
+
+  // Seconds from night start when each chest event spawns.
+  // Source: "1 min after night begins", then every 5 min; large at 9 and 4 min left.
+  const CHESTS = [
+    { sec: 60,   size: 'small',  name: '2× Матросский',      loc: 'снаружи' },
+    { sec: 360,  size: 'small',  name: 'Матросский',          loc: 'снаружи · в пещере' },
+    { sec: 660,  size: 'medium', name: 'Капитанский',         loc: 'снаружи · в пещере' },
+    { sec: 960,  size: 'medium', name: 'Капитанский',         loc: 'верх снаружи · глубь пещеры' },
+    { sec: 1260, size: 'large',  name: 'Пиратского короля',   loc: 'алтарь (статик) · глубь пещеры (статик)' },
+    { sec: 1560, size: 'large',  name: 'Пиратского короля',   loc: 'алтарь (статик) · глубь пещеры (статик)' },
+  ];
+
+  const SUN = `<svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="36" cy="36" r="13" fill="#f5c542"/>
+    <line x1="36" y1="5"    x2="36" y2="14"   stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="36" y1="58"   x2="36" y2="67"   stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="5"  y1="36"   x2="14" y2="36"   stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="58" y1="36"   x2="67" y2="36"   stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="14.8" y1="14.8" x2="21.2" y2="21.2" stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="50.8" y1="50.8" x2="57.2" y2="57.2" stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="57.2" y1="14.8" x2="50.8" y2="21.2" stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="21.2" y1="50.8" x2="14.8" y2="57.2" stroke="#f5c542" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>`;
+
+  const MOON = `<svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="33" cy="36" r="20" fill="#7eb8f7"/>
+    <circle cx="44" cy="33" r="16" fill="#080c14"/>
+  </svg>`;
+
+  function msk(date) {
+    const d = new Date(date.getTime() + 3 * 3600e3);
+    return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+  }
+
+  function mskDateLabel(date) {
+    const d = new Date(date.getTime() + 3 * 3600e3);
+    const months = ['января','февраля','марта','апреля','мая','июня',
+                    'июля','августа','сентября','октября','ноября','декабря'];
+    return d.getUTCDate() + ' ' + months[d.getUTCMonth()];
+  }
+
+  function mskDay(date) {
+    const d = new Date(date.getTime() + 3 * 3600e3);
+    return d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDate();
+  }
+
+  function fmt(sec) {
+    const h  = Math.floor(sec / 3600);
+    const m  = Math.floor(sec % 3600 / 60);
+    const s  = sec % 60;
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
+  function fmtMs(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function getState(now) {
+    if (testNightElapsed !== null) {
+      const e = testNightElapsed;
+      return { phase: 'night', remaining: NIGHT - e, elapsed: e, total: NIGHT };
+    }
+    const sec = Math.floor((now - ANCHOR) / 1000);
+    const pos = ((sec % CYCLE) + CYCLE) % CYCLE;
+    if (pos < NIGHT) {
+      return { phase: 'night', remaining: NIGHT - pos, elapsed: pos,         total: NIGHT };
+    }
+    return   { phase: 'day',   remaining: CYCLE - pos, elapsed: pos - NIGHT, total: DAY  };
+  }
+
+  function getSchedule(now, n = 10) {
+    const sec = Math.floor((now - ANCHOR) / 1000);
+    const pos = ((sec % CYCLE) + CYCLE) % CYCLE;
+
+    let secsLeft, nextPhase;
+    if (pos < NIGHT) { secsLeft = NIGHT - pos; nextPhase = 'day';   }
+    else              { secsLeft = CYCLE - pos; nextPhase = 'night'; }
+
+    const items = [];
+    let t  = new Date(now.getTime() + secsLeft * 1000);
+    let ph = nextPhase;
+    for (let i = 0; i < n; i++) {
+      items.push({ time: new Date(t), phase: ph });
+      t  = new Date(t.getTime() + (ph === 'night' ? NIGHT : DAY) * 1000);
+      ph = ph === 'night' ? 'day' : 'night';
+    }
+    return items;
+  }
+
+  function render() {
+    const now = new Date();
+    const s   = getState(now);
+
+    document.getElementById('icon').innerHTML = s.phase === 'night' ? MOON : SUN;
+
+    const label = document.getElementById('phaseLabel');
+    label.textContent = s.phase === 'night' ? 'Ночь' : 'День';
+    label.className   = 'phase-label ' + s.phase;
+
+    document.getElementById('phaseSub').textContent =
+      s.phase === 'night' ? 'до рассвета' : 'до заката';
+
+    const cd = document.getElementById('countdown');
+    cd.textContent = fmt(s.remaining);
+    cd.className   = 'countdown ' + s.phase;
+
+    const fill = document.getElementById('progressFill');
+    fill.style.width = (s.elapsed / s.total * 100).toFixed(3) + '%';
+    fill.className   = 'progress-fill ' + s.phase;
+
+    // Warning: teleport to island before night
+    const banner    = document.getElementById('warnBanner');
+    const warnTitle = document.getElementById('warnTitle');
+    if (s.phase === 'day' && s.remaining <= 5 * 60) {
+      warnTitle.textContent = `Ночь через ${fmt(s.remaining)} — телепортируйся на остров`;
+      banner.classList.add('visible');
+    } else {
+      banner.classList.remove('visible');
+    }
+
+    // Chest timeline (night only)
+    const chestSection = document.getElementById('chestSection');
+    const chestList    = document.getElementById('chestList');
+    if (s.phase === 'night') {
+      chestSection.classList.add('visible');
+      chestList.innerHTML = '';
+
+      const nightElapsed = s.elapsed;
+      const nextIdx = CHESTS.findIndex(ev => ev.sec > nightElapsed);
+
+      CHESTS.forEach((ev, idx) => {
+        const isPast  = ev.sec <= nightElapsed;
+        const isNext  = idx === nextIdx;
+        const secsUntil = ev.sec - nightElapsed;
+
+        const li = document.createElement('li');
+        li.className = 'chest-item' + (isPast ? ' past' : '');
+
+        let etaHtml = '';
+        if (!isPast) {
+          etaHtml = `<span class="chest-eta${isNext ? ' next' : ''}">${fmtMs(secsUntil)}</span>`;
+        }
+
+        const remaining = NIGHT - ev.sec;
+        li.innerHTML = `
+          <span class="chest-time">
+            ${fmtMs(ev.sec)}
+            <span class="chest-time-rem">${fmtMs(remaining)} ост.</span>
+          </span>
+          <span class="chest-dot ${ev.size}"></span>
+          <span class="chest-info">
+            <div class="chest-name">${ev.name}</div>
+            <div class="chest-loc">${ev.loc}</div>
+          </span>
+          ${etaHtml}
+        `;
+        chestList.appendChild(li);
+      });
+    } else {
+      chestSection.classList.remove('visible');
+    }
+
+    // Schedule
+    const list    = document.getElementById('schedule');
+    list.innerHTML = '';
+    let lastDay    = mskDay(now);
+
+    getSchedule(now).forEach(item => {
+      const day = mskDay(item.time);
+      if (day !== lastDay) {
+        const sep = document.createElement('li');
+        sep.className   = 's-date';
+        sep.textContent = mskDateLabel(item.time);
+        list.appendChild(sep);
+        lastDay = day;
+      }
+
+      const li  = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 's-row';
+      row.innerHTML = `
+        <span class="s-time">${msk(item.time)}</span>
+        <span class="s-pip ${item.phase}"></span>
+        <span class="s-name">${item.phase === 'night' ? 'Ночь' : 'День'}</span>
+        <span class="s-dur">${item.phase === 'night' ? '30 мин' : '2 ч'}</span>
+      `;
+      li.appendChild(row);
+      list.appendChild(li);
+    });
+  }
+
+  render();
+  setInterval(render, 1000);
+</script>
+</body>
+</html>
