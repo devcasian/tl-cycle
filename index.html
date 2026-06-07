@@ -371,8 +371,6 @@
 <script>
   let testNightElapsed = null;
 
-  if (CONFIG.testMode) enableTest();
-
   function enableTest() {
     testNightElapsed = 30;
     document.getElementById('testPanel').style.display = 'flex';
@@ -594,7 +592,8 @@
     });
   }
 
-  render();
+  if (CONFIG.testMode) enableTest();
+  else render();
   setInterval(render, 1000);
 </script>
 </body>
